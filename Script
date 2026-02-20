@@ -1,0 +1,233 @@
+-- SERVIÇOS
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
+
+-- CONFIGURAÇÕES GLOBAIS
+_G.Config = {
+    AimbotActive = false,
+    ShowFOV = false,
+    FOVSize = 100,
+    WallCheck = true,
+    HitboxActive = false,
+    HitboxSize = 2,
+    InfJump = false,
+    SpinActive = false,
+    SpinSpeed = 15,
+    WalkSpeed = 16,
+    TeamCheck = false,
+    EspLines = false,
+    EspLife = false,
+    Visible = true
+}
+
+local Aiming = false
+
+-- FOV CIRCLE
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1
+FOVCircle.Color = Color3.new(1, 1, 1)
+FOVCircle.Transparency = 0.7
+FOVCircle.Visible = false
+
+-- GUI PRINCIPAL
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+ScreenGui.Name = "TLOU2_V20_Final"
+ScreenGui.ResetOnSpawn = false
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 320, 0, 680) -- Aumentado para caber tudo
+Main.Position = UDim2.new(0.5, -160, 0.5, -340)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Main.BackgroundTransparency = 0.1
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+Main.Active = true; Main.Draggable = true
+
+-- FUNÇÕES DE CRIAÇÃO
+local function NewToggle(name, yPos, parent, callback)
+    local container = Instance.new("Frame", parent)
+    container.Size = UDim2.new(0.9, 0, 0, 25); container.Position = UDim2.new(0.05, 0, 0, yPos); container.BackgroundTransparency = 1
+    local btn = Instance.new("TextButton", container)
+    btn.Size = UDim2.new(0, 18, 0, 18); btn.Position = UDim2.new(0, 0, 0.5, -9); btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45); btn.Text = ""
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    local txt = Instance.new("TextLabel", container)
+    txt.Text = name; txt.Position = UDim2.new(0, 30, 0, 0); txt.Size = UDim2.new(0, 200, 1, 0); txt.TextColor3 = Color3.new(1, 1, 1); txt.BackgroundTransparency = 1; txt.Font = "GothamSemibold"; txt.TextSize = 13; txt.TextXAlignment = "Left"
+    btn.MouseButton1Click:Connect(function()
+        local active = btn.BackgroundColor3 == Color3.fromRGB(45, 45, 45)
+        btn.BackgroundColor3 = active and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(45, 45, 45)
+        callback(active)
+    end)
+end
+
+local function NewLabel(text, yPos, parent)
+    local lbl = Instance.new("TextLabel", parent)
+    lbl.Text = text; lbl.Size = UDim2.new(1, 0, 0, 20); lbl.Position = UDim2.new(0, 0, 0, yPos); lbl.TextColor3 = Color3.fromRGB(200, 200, 200); lbl.BackgroundTransparency = 1; lbl.Font = "GothamBold"; lbl.TextSize = 11
+end
+
+local function NewSlider(yPos, parent, min, max, callback)
+    local bg = Instance.new("Frame", parent)
+    bg.Size = UDim2.new(0.8, 0, 0, 4); bg.Position = UDim2.new(0.1, 0, 0, yPos); bg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    local knob = Instance.new("TextButton", bg)
+    knob.Size = UDim2.new(0, 12, 0, 12); knob.Position = UDim2.new(0, 0, 0.5, -6); knob.Text = ""
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+    local dragging = false
+    knob.MouseButton1Down:Connect(function() dragging = true end)
+    UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+    RunService.RenderStepped:Connect(function()
+        if dragging then
+            local pos = math.clamp((Mouse.X - bg.AbsolutePosition.X) / bg.AbsoluteSize.X, 0, 1)
+            knob.Position = UDim2.new(pos, -6, 0.5, -6)
+            callback(min + (max - min) * pos)
+        end
+    end)
+end
+
+-- MONTAGEM DO MENU V20
+local Title = Instance.new("TextLabel", Main)
+Title.Text = "TLOU2 V20 - THE FINAL BOSS"; Title.Size = UDim2.new(1, 0, 0, 45); Title.TextColor3 = Color3.new(1, 1, 1); Title.BackgroundTransparency = 1; Title.Font = "GothamBold"; Title.TextSize = 16
+
+-- 1. AIMBOT (E)
+NewToggle("ATIVAR AIMBOT (SEGURE E)", 50, Main, function(v) _G.Config.AimbotActive = v end)
+NewToggle("MOSTRAR CÍRCULO FOV", 80, Main, function(v) _G.Config.ShowFOV = v end)
+NewToggle("WALL CHECK", 110, Main, function(v) _G.Config.WallCheck = v end)
+NewLabel("TAMANHO DO FOV", 135, Main)
+NewSlider(155, Main, 30, 600, function(v) _G.Config.FOVSize = v end)
+
+-- 2. HITBOX
+NewToggle("EXPANDIR HITBOX", 185, Main, function(v) _G.Config.HitboxActive = v end)
+NewLabel("TAMANHO DA HITBOX", 210, Main)
+NewSlider(230, Main, 2, 30, function(v) _G.Config.HitboxSize = v end)
+
+-- 3. MOVIMENTAÇÃO
+NewToggle("PULO INFINITO", 260, Main, function(v) _G.Config.InfJump = v end)
+NewLabel("VELOCIDADE (SPEED)", 290, Main)
+NewSlider(310, Main, 16, 250, function(v) _G.Config.WalkSpeed = v end)
+
+-- 4. FUN (GIRA GIRA)
+NewToggle("ATIVAR GIRA-GIRA", 340, Main, function(v) _G.Config.SpinActive = v end)
+NewLabel("VELOCIDADE DO GIRO", 365, Main)
+NewSlider(385, Main, 0, 100, function(v) _G.Config.SpinSpeed = v end)
+
+-- 5. CONFIGS & ESP
+NewToggle("TEAM CHECK (NÃO MIRAR AMIGOS)", 415, Main, function(v) _G.Config.TeamCheck = v end)
+
+local espBtn = Instance.new("TextButton", Main)
+espBtn.Text = "CONFIGURAÇÕES DE ESP"; espBtn.Size = UDim2.new(0.8, 0, 0, 30); espBtn.Position = UDim2.new(0.1, 0, 0, 455); espBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35); espBtn.TextColor3 = Color3.new(1, 1, 1); espBtn.Font = "GothamBold"
+Instance.new("UICorner", espBtn)
+
+--- [LÓGICA CORE] ---
+
+-- AIMBOT SYSTEM
+local function IsVisible(part)
+    if not _G.Config.WallCheck then return true end
+    local cast = Camera:GetPartsObscuringTarget({part.Position}, {LocalPlayer.Character, part.Parent})
+    return #cast == 0
+end
+
+local function GetTarget()
+    local target, closest = nil, _G.Config.FOVSize
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character.Humanoid.Health > 0 then
+            if _G.Config.TeamCheck and p.Team == LocalPlayer.Team then continue end
+            local pos, onScreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
+            if onScreen then
+                local dist = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(pos.X, pos.Y)).Magnitude
+                if dist < closest and IsVisible(p.Character.Head) then
+                    closest = dist; target = p
+                end
+            end
+        end
+    end
+    return target
+end
+
+UserInputService.InputBegan:Connect(function(i, g) if not g and i.KeyCode == Enum.KeyCode.E then Aiming = true end end)
+UserInputService.InputEnded:Connect(function(i, g) if not g and i.KeyCode == Enum.KeyCode.E then Aiming = false end end)
+
+-- MAIN LOOP
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Visible = _G.Config.ShowFOV
+    FOVCircle.Radius = _G.Config.FOVSize
+    FOVCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
+
+    if _G.Config.AimbotActive and Aiming then
+        local t = GetTarget()
+        if t then Camera.CFrame = CFrame.new(Camera.CFrame.Position, t.Character.Head.Position) end
+    end
+
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = _G.Config.WalkSpeed
+        if _G.Config.SpinActive then
+            LocalPlayer.Character.Humanoid.AutoRotate = false
+            LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.Angles(0, math.rad(_G.Config.SpinSpeed), 0)
+        else
+            LocalPlayer.Character.Humanoid.AutoRotate = true
+        end
+    end
+end)
+
+-- HITBOX LOOP
+RunService.Stepped:Connect(function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local root = p.Character.HumanoidRootPart
+            if _G.Config.HitboxActive and not (_G.Config.TeamCheck and p.Team == LocalPlayer.Team) then
+                root.Size = Vector3.new(_G.Config.HitboxSize, _G.Config.HitboxSize, _G.Config.HitboxSize)
+                root.Transparency = 0.7; root.CanCollide = false
+            else
+                root.Size = Vector3.new(2,2,1); root.Transparency = 1
+            end
+        end
+    end
+end)
+
+-- INF JUMP
+UserInputService.JumpRequest:Connect(function()
+    if _G.Config.InfJump and LocalPlayer.Character then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+-- ESP DRAWING (TOP LINES)
+local function ESP(plr)
+    local l1 = Drawing.new("Line"); l1.Visible = false; l1.Thickness = 1; l1.Color = Color3.new(1,1,1)
+    local hb = Drawing.new("Line"); hb.Visible = false; hb.Thickness = 3; hb.Color = Color3.new(0,0,0)
+    local gh = Drawing.new("Line"); gh.Visible = false; gh.Thickness = 1.5; gh.Color = Color3.new(0,1,0)
+
+    RunService.RenderStepped:Connect(function()
+        if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.Humanoid.Health > 0 then
+            local pos, screen = Camera:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
+            if screen and not (_G.Config.TeamCheck and plr.Team == LocalPlayer.Team) then
+                local head = Camera:WorldToViewportPoint(plr.Character.Head.Position)
+                local dy = math.abs(head.Y - pos.Y)
+                
+                if _G.Config.EspLines then
+                    l1.Visible = true; l1.From = Vector2.new(Camera.ViewportSize.X/2, 0); l1.To = Vector2.new(pos.X, pos.Y - dy*2); l1.Color = plr.TeamColor.Color
+                else l1.Visible = false end
+                
+                if _G.Config.EspLife then
+                    local side = Camera:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position + plr.Character.HumanoidRootPart.CFrame.RightVector * -1.8)
+                    local hp = plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth
+                    hb.Visible = true; hb.From = Vector2.new(side.X, pos.Y + dy*2); hb.To = Vector2.new(side.X, pos.Y - dy*2)
+                    gh.Visible = true; gh.From = Vector2.new(side.X, pos.Y + dy*2); gh.To = Vector2.new(side.X, (pos.Y + dy*2) - (dy*4*hp)); gh.Color = Color3.new(1,0,0):lerp(Color3.new(0,1,0), hp)
+                else hb.Visible = false; gh.Visible = false end
+            else l1.Visible = false; hb.Visible = false; gh.Visible = false end
+        else l1.Visible = false; hb.Visible = false; gh.Visible = false end
+    end)
+end
+
+-- JANELA ESP
+local EspFrame = Instance.new("Frame", Main)
+EspFrame.Size = UDim2.new(0, 180, 0, 100); EspFrame.Position = UDim2.new(1.05, 0, 0, 455); EspFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); EspFrame.Visible = false
+Instance.new("UICorner", EspFrame)
+NewToggle("LINHAS (TOPO)", 20, EspFrame, function(v) _G.Config.EspLines = v end)
+NewToggle("VIDA (BARRA)", 60, EspFrame, function(v) _G.Config.EspLife = v end)
+espBtn.MouseButton1Click:Connect(function() EspFrame.Visible = not EspFrame.Visible end)
+
+-- START
+for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then ESP(p) end end
+Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then ESP(p) end end)
+UserInputService.InputBegan:Connect(function(i, g) if not g and i.KeyCode == Enum.KeyCode.Insert then _G.Config.Visible = not _G.Config.Visible; Main.Visible = _G.Config.Visible end end)
