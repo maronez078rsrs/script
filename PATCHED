@@ -1,161 +1,50 @@
 --[[
-    REAL XITERS - ULTIMATE EDITION V8.0
-    FIXED LOAD SYSTEM
-    TARGET OWNER: Lukin_dograuBr
+    REAL XITERS V8.0 - ESTÁVEL (FIXED HITBOX & SPEED)
+    PROTEÇÃO: Lukin_dograuBr
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
 local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
 
 -- CONFIGURAÇÃO DE DONO
 local OwnerNick = "Lukin_dograuBr"
 
--- ==========================================
--- BANCO DE LOGINS (PREENCHA AQUI)
--- ==========================================
+-- BANCO DE LOGINS
 local LoginsPremium = {
-    ["admin"] = "admin123",
+    ["555"] = "555",
     ["zk"] = "zkputinha",
-    ["usuario1"] = "senha1",
-    ["usuario2"] = "senha2",
-    -- Adicione mais seguindo o padrão acima
+    [""] = ""
 }
 
 local LoginsFree = {
-    ["teste"] = "123",
-    ["free1"] = "free1",
-    -- Adicione mais seguindo o padrão acima
+    ["Fimdasférias"] = "FREE-AJNXZ-DNHUW",
+    [""] = "",
+    [""] = ""
+    [""] = "",
+    [""] = "",
+    [""] = ""
 }
 
 _G.Config = {
-    AimbotActive = false, AimbotKey = "E", FOVSize = 150, ShowFOV = false,
-    EspBox = false, EspLines = false, EspHealth = false, EspColors = false,
+    AimbotActive = false, AimbotKey = Enum.KeyCode.E, FOVSize = 150,
     HitboxActive = false, HitboxSize = 2,
-    SpinActive = false, SpinSpeed = 25,
-    TeamCheck = true, IsFreeVersion = false
+    SpeedActive = false, SpeedValue = 16, -- Velocidade padrão do Roblox é 16
+    IsFreeVersion = false
 }
 
-local SpinAngle = 0
-local FOVDrawing = Drawing.new("Circle")
-
--- ==========================================
--- SISTEMA DE MARCA D'ÁGUA
--- ==========================================
-local function CreateWatermark()
-    local Watermark = Drawing.new("Text")
-    Watermark.Visible = false
-    Watermark.Text = "REAL XITERS - VERSÃO FREE"
-    Watermark.Size = 40
-    Watermark.Center = true
-    Watermark.Outline = true
-    Watermark.Color = Color3.fromRGB(130, 0, 255)
-    Watermark.Font = 2
-    
-    RunService.RenderStepped:Connect(function()
-        if _G.Config.IsFreeVersion then
-            Watermark.Visible = true
-            Watermark.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y * 0.10)
-        else
-            Watermark.Visible = false
-        end
-    end)
-end
-CreateWatermark()
-
--- DRAG SYSTEM
-local function MakeDraggable(gui)
-    local dragging, dragInput, dragStart, startPos
-    gui.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true; dragStart = input.Position; startPos = gui.Position
-            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
-        end
-    end)
-    gui.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-end
-
--- ESP SYSTEM COM OWNER TAG
-local function ApplyESP(plr)
-    local Box = Drawing.new("Square"); Box.Visible = false; Box.Thickness = 1.5
-    local Line = Drawing.new("Line"); Line.Visible = false; Line.Thickness = 1.5
-    local HealthBarOutline = Drawing.new("Square"); HealthBarOutline.Visible = false; HealthBarOutline.Filled = true; HealthBarOutline.Color = Color3.new(0,0,0)
-    local HealthBar = Drawing.new("Square"); HealthBar.Visible = false; HealthBar.Filled = true
-    
-    local OwnerTag = Drawing.new("Text")
-    OwnerTag.Visible = false
-    OwnerTag.Text = "OWNER"
-    OwnerTag.Color = Color3.fromRGB(255, 0, 0)
-    OwnerTag.Size = 22
-    OwnerTag.Center = true
-    OwnerTag.Outline = true
-    OwnerTag.Font = 2
-
-    RunService.RenderStepped:Connect(function()
-        if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Head") and plr ~= LocalPlayer then
-            local hum = plr.Character:FindFirstChild("Humanoid")
-            local hrp = plr.Character.HumanoidRootPart
-            local head = plr.Character.Head
-            local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-            local headPos, headOnScreen = Camera:WorldToViewportPoint(head.Position)
-            
-            if onScreen and hum and hum.Health > 0 then
-                local color = _G.Config.EspColors and plr.TeamColor.Color or Color3.new(1,1,1)
-                local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
-                local sizeX = (2800 / dist) * 1.2
-                local sizeY = (3800 / dist) * 1.2
-
-                if plr.Name == OwnerNick then
-                    OwnerTag.Visible = true
-                    OwnerTag.Position = Vector2.new(headPos.X, headPos.Y - 35)
-                else
-                    OwnerTag.Visible = false
-                end
-
-                if _G.Config.EspBox then
-                    Box.Visible = true; Box.Color = color; Box.Size = Vector2.new(sizeX, sizeY); Box.Position = Vector2.new(hrpPos.X - sizeX/2, hrpPos.Y - sizeY/2)
-                else Box.Visible = false end
-
-                if _G.Config.EspLines then
-                    Line.Visible = true; Line.Color = color; Line.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y); Line.To = Vector2.new(hrpPos.X, hrpPos.Y)
-                else Line.Visible = false end
-
-                if _G.Config.EspHealth then
-                    local hp = hum.Health / hum.MaxHealth
-                    HealthBarOutline.Visible = true; HealthBarOutline.Size = Vector2.new(4, sizeY); HealthBarOutline.Position = Vector2.new(hrpPos.X - sizeX/2 - 6, hrpPos.Y - sizeY/2)
-                    HealthBar.Visible = true; HealthBar.Size = Vector2.new(2, sizeY * hp); HealthBar.Position = Vector2.new(hrpPos.X - sizeX/2 - 5, (hrpPos.Y - sizeY/2) + (sizeY * (1 - hp)))
-                    if hp > 0.7 then HealthBar.Color = Color3.new(0,1,0) elseif hp > 0.4 then HealthBar.Color = Color3.new(1,1,0) else HealthBar.Color = Color3.new(1,0,0) end
-                else HealthBar.Visible = false; HealthBarOutline.Visible = false end
-            else Box.Visible = false; Line.Visible = false; HealthBar.Visible = false; HealthBarOutline.Visible = false; OwnerTag.Visible = false end
-        else Box.Visible = false; Line.Visible = false; HealthBar.Visible = false; HealthBarOutline.Visible = false; OwnerTag.Visible = false end
-    end)
-end
-
-for _, p in pairs(Players:GetPlayers()) do ApplyESP(p) end
-Players.PlayerAdded:Connect(ApplyESP)
-
--- ==========================================
--- LÓGICA DE ALVO + PROTEÇÃO Lukin_dograuBr
--- ==========================================
+-- FUNÇÃO DE ALVO (IGNORA O DONO)
 local function GetClosestToMouse()
     local Target = nil
     local MaxDist = _G.Config.FOVSize
     for _, v in pairs(Players:GetPlayers()) do
-        if v.Name == OwnerNick then continue end
-        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
-            local Pos, OnScreen = Camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
+        if v.Name ~= OwnerNick and v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
+            local Pos, OnScreen = Camera:WorldToViewportPoint(v.Character.Head.Position)
             if OnScreen then
-                local MousePos = Vector2.new(Mouse.X, Mouse.Y + 36)
+                local MousePos = Vector2.new(Mouse.X, Mouse.Y)
                 local Dist = (MousePos - Vector2.new(Pos.X, Pos.Y)).Magnitude
                 if Dist < MaxDist then Target = v; MaxDist = Dist end
             end
@@ -164,85 +53,172 @@ local function GetClosestToMouse()
     return Target
 end
 
--- MENU PRINCIPAL
+-- INTERFACE PRINCIPAL
 local function OpenMainUI()
-    local MainGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui); local Main = Instance.new("Frame", MainGui); Main.Size = UDim2.new(0, 400, 0, 520); Main.Position = UDim2.new(0.5, -200, 0.5, -260); Main.BackgroundColor3 = Color3.fromRGB(12, 12, 12); Instance.new("UICorner", Main); MakeDraggable(Main)
-    UserInputService.InputBegan:Connect(function(input) if input.KeyCode == Enum.KeyCode.Insert then Main.Visible = not Main.Visible end end)
-    local TabsFrame = Instance.new("Frame", Main); TabsFrame.Size = UDim2.new(1, 0, 0, 50); TabsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Instance.new("UICorner", TabsFrame)
-    local Selector = Instance.new("Frame", TabsFrame); Selector.Size = UDim2.new(0.33, -10, 0, 3); Selector.Position = UDim2.new(0, 5, 1, -3); Selector.BackgroundColor3 = Color3.fromRGB(130, 0, 255)
-    local Pages = {}
-    local function CreatePage(name, order)
-        local b = Instance.new("TextButton", TabsFrame); b.Size = UDim2.new(0.33, 0, 1, 0); b.Position = UDim2.new((order-1)*0.33, 0, 0, 0); b.BackgroundTransparency = 1; b.Text = name; b.TextColor3 = Color3.new(1,1,1); b.Font = "GothamBold"; b.TextSize = 18
-        local p = Instance.new("ScrollingFrame", Main); p.Size = UDim2.new(1, -20, 1, -70); p.Position = UDim2.new(0, 10, 0, 65); p.BackgroundTransparency = 1; p.Visible = (order == 1); p.ScrollBarThickness = 0
-        Pages[name] = p; local l = Instance.new("UIListLayout", p); l.Padding = UDim.new(0, 15); l.HorizontalAlignment = "Center"
-        b.MouseButton1Click:Connect(function() for n, pg in pairs(Pages) do pg.Visible = (n == name) end TweenService:Create(Selector, TweenInfo.new(0.3), {Position = UDim2.new((order-1)*0.33, 5, 1, -3)}):Play() end)
+    local ScreenGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+    local Main = Instance.new("Frame", ScreenGui)
+    Main.Size = UDim2.new(0, 350, 0, 400)
+    Main.Position = UDim2.new(0.5, -175, 0.5, -200)
+    Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Main.Active = true
+    Main.Draggable = true
+    Instance.new("UICorner", Main)
+
+    local Title = Instance.new("TextLabel", Main)
+    Title.Text = "REAL XITERS - MENU"
+    Title.Size = UDim2.new(1, 0, 0, 40)
+    Title.TextColor3 = Color3.fromRGB(130, 0, 255)
+    Title.Font = "GothamBold"
+    Title.TextSize = 18
+    Title.BackgroundTransparency = 1
+
+    local Container = Instance.new("ScrollingFrame", Main)
+    Container.Size = UDim2.new(1, -20, 1, -60)
+    Container.Position = UDim2.new(0, 10, 0, 50)
+    Container.BackgroundTransparency = 1
+    Container.ScrollBarThickness = 2
+
+    local layout = Instance.new("UIListLayout", Container)
+    layout.Padding = UDim.new(0, 10)
+
+    -- FUNÇÃO PARA CRIAR BOTÃO TOGGLE
+    local function CreateToggle(text, configKey)
+        local btn = Instance.new("TextButton", Container)
+        btn.Size = UDim2.new(1, 0, 0, 40)
+        btn.Text = text .. ": OFF"
+        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        btn.TextColor3 = Color3.new(1, 1, 1)
+        Instance.new("UICorner", btn)
+
+        btn.MouseButton1Click:Connect(function()
+            _G.Config[configKey] = not _G.Config[configKey]
+            btn.Text = text .. ": " .. (_G.Config[configKey] and "ON" or "OFF")
+            btn.BackgroundColor3 = _G.Config[configKey] and Color3.fromRGB(130, 0, 255) or Color3.fromRGB(30, 30, 30)
+        end)
     end
-    CreatePage("AIM", 1); CreatePage("VISUAL", 2); CreatePage("MISC", 3)
-    local function Toggle(pg, txt, key)
-        local b = Instance.new("TextButton", Pages[pg]); b.Size = UDim2.new(0.9, 0, 0, 45); b.BackgroundColor3 = _G.Config[key] and Color3.fromRGB(130, 0, 255) or Color3.fromRGB(30, 30, 30); b.Text = txt; b.TextColor3 = Color3.new(1,1,1); b.Font = "GothamBold"; b.TextSize = 16; Instance.new("UICorner", b)
-        b.MouseButton1Click:Connect(function() _G.Config[key] = not _G.Config[key]; b.BackgroundColor3 = _G.Config[key] and Color3.fromRGB(130, 0, 255) or Color3.fromRGB(30, 30, 30) end)
+
+    -- FUNÇÃO PARA CRIAR SLIDER
+    local function CreateSlider(text, min, max, configKey)
+        local frame = Instance.new("Frame", Container)
+        frame.Size = UDim2.new(1, 0, 0, 50)
+        frame.BackgroundTransparency = 1
+
+        local label = Instance.new("TextLabel", frame)
+        label.Text = text .. ": " .. _G.Config[configKey]
+        label.Size = UDim2.new(1, 0, 0, 20)
+        label.TextColor3 = Color3.new(1, 1, 1)
+        label.BackgroundTransparency = 1
+
+        local sliderBg = Instance.new("Frame", frame)
+        sliderBg.Size = UDim2.new(0.9, 0, 0, 5)
+        sliderBg.Position = UDim2.new(0.05, 0, 0.7, 0)
+        sliderBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+
+        local sliderFill = Instance.new("Frame", sliderBg)
+        sliderFill.Size = UDim2.new((_G.Config[configKey]-min)/(max-min), 0, 1, 0)
+        sliderFill.BackgroundColor3 = Color3.fromRGB(130, 0, 255)
+
+        sliderBg.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                local connection
+                connection = RunService.RenderStepped:Connect(function()
+                    local percent = math.clamp((Mouse.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+                    sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+                    local value = math.floor(min + (max - min) * percent)
+                    _G.Config[configKey] = value
+                    label.Text = text .. ": " .. value
+                end)
+                UserInputService.InputEnded:Connect(function(ended)
+                    if ended.UserInputType == Enum.UserInputType.MouseButton1 then
+                        if connection then connection:Disconnect() end
+                    end
+                end)
+            end
+        end)
     end
-    local function Slider(pg, txt, min, max, key)
-        local f = Instance.new("Frame", Pages[pg]); f.Size = UDim2.new(0.9, 0, 0, 75); f.BackgroundTransparency = 1
-        local l = Instance.new("TextLabel", f); l.Size = UDim2.new(1, 0, 0, 30); l.Text = txt..": ".._G.Config[key]; l.TextColor3 = Color3.new(1,1,1); l.Font = "GothamBold"; l.TextSize = 15; l.BackgroundTransparency = 1
-        local bg = Instance.new("Frame", f); bg.Name = "SliderArea"; bg.Size = UDim2.new(1, 0, 0, 10); bg.Position = UDim2.new(0, 0, 0.7, 0); bg.BackgroundColor3 = Color3.fromRGB(40, 40, 40); Instance.new("UICorner", bg)
-        local fill = Instance.new("Frame", bg); fill.Size = UDim2.new((_G.Config[key]-min)/(max-min), 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(130, 0, 255); Instance.new("UICorner", fill)
-        bg.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then local m = RunService.RenderStepped:Connect(function() local pos = math.clamp((Mouse.X - bg.AbsolutePosition.X) / bg.AbsoluteSize.X, 0, 1); fill.Size = UDim2.new(pos, 0, 1, 0); _G.Config[key] = math.floor(min + (max-min)*pos); l.Text = txt..": ".._G.Config[key] end) UserInputService.InputEnded:Connect(function(e) if e.UserInputType == Enum.UserInputType.MouseButton1 then m:Disconnect() end end) end end)
-    end
-    Toggle("AIM", "AIMBOT (HOLD E)", "AimbotActive"); Toggle("AIM", "SHOW FOV", "ShowFOV"); Slider("AIM", "FOV RADIUS", 30, 800, "FOVSize")
-    Toggle("VISUAL", "ESP BOX", "EspBox"); Toggle("VISUAL", "ESP LINES", "EspLines"); Toggle("VISUAL", "ESP HEALTH", "EspHealth"); Toggle("VISUAL", "TEAM COLORS", "EspColors")
-    Toggle("MISC", "SPIN BOT", "SpinActive"); Slider("MISC", "SPIN SPEED", 0, 150, "SpinSpeed"); Toggle("MISC", "EXPAND HITBOX", "HitboxActive"); Slider("MISC", "HITBOX SIZE", 2, 50, "HitboxSize")
+
+    -- ADICIONANDO BOTÕES
+    CreateToggle("AIMBOT (E)", "AimbotActive")
+    CreateToggle("EXPAND HITBOX", "HitboxActive")
+    CreateSlider("HITBOX SIZE", 2, 50, "HitboxSize")
+    CreateToggle("SPEED HACK", "SpeedActive")
+    CreateSlider("SPEED VALUE", 16, 300, "SpeedValue")
 end
 
--- LOGIN SCREEN
-local LoginGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui); local LF = Instance.new("Frame", LoginGui); LF.Size = UDim2.new(0, 320, 0, 380); LF.Position = UDim2.new(0.5, -160, 0.5, -190); LF.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Instance.new("UICorner", LF); MakeDraggable(LF)
-local U = Instance.new("TextBox", LF); U.PlaceholderText = "USUÁRIO"; U.Text = ""; U.Size = UDim2.new(0.8,0,0,50); U.Position = UDim2.new(0.1,0,0.25,0); U.BackgroundColor3 = Color3.fromRGB(25,25,25); U.TextColor3 = Color3.new(1,1,1); U.Font = "Gotham"; U.TextSize = 16; Instance.new("UICorner", U)
-local P = Instance.new("TextBox", LF); P.PlaceholderText = "SENHA"; P.Text = ""; P.Size = UDim2.new(0.8,0,0,50); P.Position = UDim2.new(0.1,0,0.45,0); P.BackgroundColor3 = Color3.fromRGB(25,25,25); P.TextColor3 = Color3.new(1,1,1); P.Font = "Gotham"; P.TextSize = 16; Instance.new("UICorner", P)
-local B = Instance.new("TextButton", LF); B.Text = "LOGAR"; B.Size = UDim2.new(0.8,0,0,55); B.Position = UDim2.new(0.1,0,0.72,0); B.BackgroundColor3 = Color3.fromRGB(130,0,255); B.TextColor3 = Color3.new(1,1,1); B.Font = "GothamBold"; B.TextSize = 18; Instance.new("UICorner", B)
+-- TELA DE LOGIN (ABRE PRIMEIRO)
+local function CreateLogin()
+    local gui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+    local main = Instance.new("Frame", gui)
+    main.Size = UDim2.new(0, 300, 0, 300)
+    main.Position = UDim2.new(0.5, -150, 0.5, -150)
+    main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Instance.new("UICorner", main)
 
-B.MouseButton1Click:Connect(function() 
-    if LoginsPremium[U.Text] == P.Text and U.Text ~= "" then 
-        _G.Config.IsFreeVersion = false; LoginGui:Destroy(); OpenMainUI()
-    elseif LoginsFree[U.Text] == P.Text and U.Text ~= "" then
-        _G.Config.IsFreeVersion = true; LoginGui:Destroy(); OpenMainUI()
-    else 
-        B.Text = "DADOS INVÁLIDOS"; task.wait(0.5); B.Text = "LOGAR" 
-    end 
-end)
+    local user = Instance.new("TextBox", main)
+    user.PlaceholderText = "USUÁRIO"
+    user.Size = UDim2.new(0.8, 0, 0, 40)
+    user.Position = UDim2.new(0.1, 0, 0.2, 0)
+    user.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    user.TextColor3 = Color3.new(1,1,1)
 
--- MOTORES DO CHEAT
-FOVDrawing.Thickness = 1.5; FOVDrawing.Color = Color3.fromRGB(130,0,255); FOVDrawing.Filled = false
-RunService.RenderStepped:Connect(function()
-    FOVDrawing.Visible = _G.Config.ShowFOV
-    FOVDrawing.Radius = _G.Config.FOVSize
-    FOVDrawing.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
-    if _G.Config.AimbotActive and UserInputService:IsKeyDown(Enum.KeyCode[_G.Config.AimbotKey]) then
-        local target = GetClosestToMouse()
-        if target and target.Character and target.Character:FindFirstChild("Head") then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+    local pass = Instance.new("TextBox", main)
+    pass.PlaceholderText = "SENHA"
+    pass.Size = UDim2.new(0.8, 0, 0, 40)
+    pass.Position = UDim2.new(0.1, 0, 0.45, 0)
+    pass.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    pass.TextColor3 = Color3.new(1,1,1)
+
+    local btn = Instance.new("TextButton", main)
+    btn.Text = "LOGAR"
+    btn.Size = UDim2.new(0.8, 0, 0, 50)
+    btn.Position = UDim2.new(0.1, 0, 0.7, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(130, 0, 255)
+    btn.TextColor3 = Color3.new(1,1,1)
+
+    btn.MouseButton1Click:Connect(function()
+        if (LoginsPremium[user.Text] == pass.Text or LoginsFree[user.Text] == pass.Text) and user.Text ~= "" then
+            gui:Destroy()
+            OpenMainUI()
+        else
+            btn.Text = "ERRO"
+            task.wait(1)
+            btn.Text = "LOGAR"
         end
+    end)
+end
+
+-- LOOP DE FUNÇÕES (MOTOR)
+RunService.RenderStepped:Connect(function()
+    -- AIMBOT
+    if _G.Config.AimbotActive and UserInputService:IsKeyDown(_G.Config.AimbotKey) then
+        local t = GetClosestToMouse()
+        if t and t.Character then Camera.CFrame = CFrame.new(Camera.CFrame.Position, t.Character.Head.Position) end
     end
+
+    -- SPEED HACK
+    if _G.Config.SpeedActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = _G.Config.SpeedValue
+    elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = 16
+    end
+
+    -- HITBOX QUADRADA (FIXED)
     if _G.Config.HitboxActive then
         for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
-                if v.Name == OwnerNick then 
-                    v.Character.Head.Size = Vector3.new(1.15, 1.15, 1.15)
-                    v.Character.Head.Transparency = 0
-                    continue 
+            if v ~= LocalPlayer and v.Name ~= OwnerNick and v.Character and v.Character:FindFirstChild("Head") then
+                local head = v.Character.Head
+                head.Size = Vector3.new(_G.Config.HitboxSize, _G.Config.HitboxSize, _G.Config.HitboxSize)
+                head.Transparency = 0.7
+                head.Color = Color3.fromRGB(130, 0, 255)
+                head.CanCollide = false
+                
+                -- Remove a Mesh redonda (se houver) para deixar quadrado
+                if head:FindFirstChildOfClass("SpecialMesh") then
+                    head:FindFirstChildOfClass("SpecialMesh"):Destroy()
                 end
-                v.Character.Head.Size = Vector3.new(_G.Config.HitboxSize, _G.Config.HitboxSize, _G.Config.HitboxSize)
-                v.Character.Head.Transparency = 0.6
             end
         end
     end
 end)
 
-RunService.Stepped:Connect(function()
-    if _G.Config.SpinActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.Humanoid.AutoRotate = false
-        SpinAngle = SpinAngle + math.rad(_G.Config.SpinSpeed)
-        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position) * CFrame.Angles(0, SpinAngle, 0)
-    elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.AutoRotate = true
-    end
-end)
+CreateLogin()
