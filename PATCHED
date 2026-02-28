@@ -1,6 +1,6 @@
 --[[
     REAL XITERS V8.0 - ESTÁVEL (FIXED HITBOX & SPEED)
-    PROTEÇÃO: Lukin_dograuBr
+    OWNER: Lukin_dograuBr
 ]]
 
 local Players = game:GetService("Players")
