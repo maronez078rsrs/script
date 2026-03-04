@@ -11,11 +11,11 @@ local Camera = workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
 -- CONFIGURAÇÃO DE DONO
-local OwnerNick = "Lukin_dograuBr"
+local OwnerNick = "Ysatwj"
 
 -- BANCO DE LOGINS
 local LoginsPremium = {
-    ["555"] = "555",
+    ["ln1"] = "ln1",
     ["zk"] = "zkputinha",
     [""] = ""
 }
